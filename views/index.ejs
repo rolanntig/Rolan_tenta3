@@ -21,8 +21,11 @@
                 <h2><%= item.title %></h2>
                 <h2><%= item.description %></h2>
                 <h2><%= item.author %></h2>
-                <img src="./public/images/<% item.image %>" alt="img">
-            <% }) %>
+                <% if(item.image){ %>
+                    <img src="<%= item.image %>" alt="">
+                <% } else { %>
+                <% } %>
+                <% }) %>
         </div>
     </div>
 </body>

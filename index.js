@@ -3,19 +3,33 @@ if (process.env.NODE_ENV !== "production") {
 }
 const express = require("express");
 const session = require("express-session");
+const multer = require("multer");
 const bodyParser = require("body-parser");
 const bcrypt = require("bcryptjs");
+const path = require("path");
 const { PrismaClient } = require("@prisma/client");
-const { render } = require("ejs");
 
 const app = express();
 const prisma = new PrismaClient();
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+app.use(express.static('public'));
 
 app.set("view engine", "ejs");
 app.set("views", "./views");
+ 
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "public/images");
+  },
+  filename: (req, file, cb) => {
+    console.log(file);
+    cb(null, Date.now() + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({ storage: storage });
 
 app.use(
   session({
@@ -52,9 +66,10 @@ app.get("/signup", (req, res) => {
 });
 
 
-app.post("/signup", async (req, res) => {
+app.post("/signup", upload.single("image"),async (req, res) => {
     const errors = [];
     const { username, password, email, vpassword, Admin } = req.body;
+    const image = req.file ? `/images/${req.file.filename}` : null;
     const salt = bcrypt.genSaltSync(10);
     const hash = bcrypt.hashSync(password, salt);
     if (!username || !email || !password || !vpassword) {
@@ -74,6 +89,7 @@ app.post("/signup", async (req, res) => {
             errors: errors.map((error) => error.msg),
             username,
             email,
+            image,
             password ,
             vpassword,
         });
@@ -131,6 +147,7 @@ app.post("/login", async (req, res) => {
             });
             if (user && user.password === bcrypt.hashSync(password, user.password)) {
                 req.session.userId = user.id;
+                req.session.role = user.role;
                 res.redirect("/");
             } else {
                 errors.push({ msg: "Invalid username or password" });
@@ -145,44 +162,49 @@ app.post("/login", async (req, res) => {
     }
 });
 
-app.get("/create", requireAuth, (req, res) => {
-    errors = [];
-    res.render("create", { errors });
+app.get("/create",  requireAuth, (req, res) => {
+    if (req.session.role === "ADMIN") {
+        errors = [];
+        res.render("create", { errors });
+    } else {
+        res.redirect("/");
+    }
 });
 
-app.post("/create", requireAuth, async (req, res) => {
-    const errors = [];
+app.post("/create", upload.single("image"), requireAuth, async (req, res) => {
+  const errors = [];
     const { title, description } = req.body;
-    if (!title || !description) {
-        errors.push({ msg: "Please enter all fields" });
-    }
+    const image = req.file ? `/images/${req.file.filename}` : null;
 
-    if (errors.length > 0) {
-        res.render("create", {
-            errors: errors.map((error) => error.msg),
-            title,
-            description,
-        });
-    } else {
-        try {
-            const post = await prisma.post.create({
-                data: {
-                    title,
-                    description,
-                    authorId: req.session.userId,
+  if (!title || !description) {
+    errors.push({ msg: "Please enter all fields" });
+  }
 
-                },
-            });
-            res.redirect("/");
-        } catch (error) {
-            // Handle error appropriately
-            console.error(error);
-            errors.push({ msg: "Error creating post. Please try again." });
-            res.render("create", { errors, title, description });
-        }
+  if (errors.length > 0) {
+    res.render("create", {
+      errors: errors.map((error) => error.msg),
+        title,
+      description,
+    });
+  } else {
+    try {
+      const post = await prisma.post.create({
+        data: {
+          title,
+              description,
+          image,
+          authorId: req.session.userId,
+        },
+      });
+      res.redirect("/");
+    } catch (error) {
+      // Handle error appropriately
+      console.error(error);
+      errors.push({ msg: "Error creating post. Please try again." });
+      res.render("create", { errors, title, description });
     }
-}
-);
+  }
+});
 
 app.get("/logout", (req, res) => {
   req.session.destroy((err) => {
