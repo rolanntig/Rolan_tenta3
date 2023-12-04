@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>signup</h1>
+<% if (errors && errors.length > 0) { %>
+    <ul>
+        <% errors.forEach(function(error) { %>
+            <li><%= error %></li>
+        <% }); %>
+    </ul>
+<% } %>
+<form action="/signup" method="POST">
+    <label for="username">Username</label>
+    <input type="text" name="username" id="username" value="<%=typeof name != 'undefined' ? username : '' %>">
+    
+    <label for="email">Email</label>
+    <input type="email" name="email" id="email" value="<%= typeof email != 'undefined' ? email : ''  %>">
+    
+    <label for="password">Password</label>
+    <input type="password" name="password" id="password" value="<%= typeof password != 'undefined' ? password : ''%>">
+    
+    <label for="vpassword">Verify password</label>
+    <input type="password" name="vpassword" id="vpassword" value="<%=typeof vpassword != 'undefined' ? vpassword : '' %>">
+
+    <label for="Admin">Register as Admin</label>
+    <input type="checkbox" name="Admin" id="Admin" value="Admin">
+
+
+
+    
+    <input type="submit" value="SignUp">
+</form>
+
+
+</body>
+</html>

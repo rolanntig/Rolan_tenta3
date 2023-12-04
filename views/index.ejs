@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+
+    <nav>
+        <% if(user && user.role === 'ADMIN'){ %>
+            <a href="/create">Post</a>
+        <% } %>
+        <a href="/logout">Logout</a>
+    </nav>
+    <h1>Posts</h1>
+
+    <div class="container">
+        <div class="card">
+            <% posts.forEach(item =>{ %>
+                <h2><%= item.title %></h2>
+                <h2><%= item.description %></h2>
+                <h2><%= item.author %></h2>
+                <img src="./public/images/<% item.image %>" alt="img">
+            <% }) %>
+        </div>
+    </div>
+</body>
+</html>
